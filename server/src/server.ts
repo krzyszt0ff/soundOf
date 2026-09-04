@@ -1,12 +1,20 @@
 import express from 'express';
-import userRouter from './routes/user.js';
+import accountRouter from './routes/accountRouter.js';
 import { env } from './config/env.js';
 import { prisma } from './lib/prisma.js';
 
 const app = express();
 app.use(express.json());
 
-app.use("/api/user", userRouter);
+app.use((req, res, next) => {
+    console.log("METHOD:", req.method);
+    console.log("URL:", req.url);
+    console.log("CONTENT-TYPE:", req.headers["content-type"]);
+    console.log("BODY:", req.body);
+    next();
+});
+
+app.use("/api/account", accountRouter);
 
 app.get('/', (req, res) => {
   res.json({ message: 'SoundOf server is running a-ok!' });
