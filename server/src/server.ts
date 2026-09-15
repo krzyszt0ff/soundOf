@@ -6,14 +6,6 @@ import { prisma } from './lib/prisma.js';
 const app = express();
 app.use(express.json());
 
-app.use((req, res, next) => {
-    console.log("METHOD:", req.method);
-    console.log("URL:", req.url);
-    console.log("CONTENT-TYPE:", req.headers["content-type"]);
-    console.log("BODY:", req.body);
-    next();
-});
-
 app.use("/api/account", accountRouter);
 
 app.get('/', (req, res) => {

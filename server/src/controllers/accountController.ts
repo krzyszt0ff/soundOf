@@ -4,6 +4,8 @@ import bcrypt from "bcrypt";
 import { credentialsSchema } from "../schemas/credentialsSchema.js";
 import { prisma } from "../lib/prisma.js";
 import { userRoleOptions } from "../enums.js"
+import jwt from "jsonwebtoken";
+import { env } from '../config/env.js';
 
 export async function register(req : Request, res : Response) {
     const result = credentialsSchema.safeParse(req.body);
@@ -27,10 +29,10 @@ export async function register(req : Request, res : Response) {
 
         if (existingUser) {
             if (existingUser.email === email) {
-                return res.status(500).json({error: 'Email is already taken'});
+                return res.status(400).json({error: 'Email is already taken'});
             }
             if (existingUser.username === username) {
-                return res.status(500).json({ error: 'Username is already taken'});
+                return res.status(400).json({ error: 'Username is already taken'});
             }
         }
 
@@ -54,6 +56,33 @@ export async function register(req : Request, res : Response) {
         return res.status(500).json({
             success: false,
             error: "Database error occurred,"
+        });
+    }
+}
+
+export async function login(req : Request, res : Response) { 
+    const { identifier, password } = req.body;
+
+    try {
+        const user = await prisma.userCredentials.findFirst({
+            where: {
+                OR: [{ email: identifier }, { username: identifier }]
+            }
+        }) 
+        if (!user) return res.status(400).json({ error: 'Invalid credentials' });
+
+        const isMatch = await bcrypt.compare(password, user.passwordHash)
+        if (!isMatch) return res.status(400).json({ error: 'Invalid credentials' });
+
+        const token = jwt.sign({ id: user.userId, role: user.userRole }, env.JWT_SECRET, { expiresIn: '1h' });
+        return res.status(200).json({
+            success: true,
+            userToken: token
+        })
+    } catch (err) {
+        return res.status(500).json({ 
+            success: false, 
+            error: 'Error logging in'
         });
     }
 }
