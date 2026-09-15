@@ -2,9 +2,15 @@ import express from 'express';
 import accountRouter from './routes/accountRouter.js';
 import { env } from './config/env.js';
 import { prisma } from './lib/prisma.js';
+import cors from 'cors';
 
 const app = express();
 app.use(express.json());
+app.use(cors({
+  origin: env.CLIENT_BASE_URL,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  credentials: true
+}));
 
 app.use("/api/account", accountRouter);
 

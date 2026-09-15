@@ -9,7 +9,7 @@ export default function proxy(req: NextRequest) {
     req.nextUrl.pathname.startsWith(route));
 
     if (isProtectedRoute && !token) {
-        return NextResponse.redirect(new URL('/auth/register', req.url));
+        return NextResponse.redirect(new URL('/auth/login', req.url));
     }
 
     return NextResponse.next()
