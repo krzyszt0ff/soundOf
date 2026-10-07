@@ -1,0 +1,84 @@
+@reference "../globals.css";
+
+    .ambient {
+        width: 100vw;
+        height: 100vh;
+        z-index: 0;
+        position: fixed;
+        top: 0;
+        left: 0;
+        background-color: var(--background);
+    }
+
+    .blob {
+        position: absolute;
+        aspect-ratio: 1/1;
+        border-radius: 50%;
+        filter: blur(100px);
+        opacity: .6;
+        will-change: transform;
+    }
+
+    .blob1 {
+        width: 50vh;
+        background: var(--accent-green-glow);
+        animation: move1 18s ease-in-out infinite alternate;
+    }
+
+    @keyframes move1 {
+        from {
+            transform: translate(0, 0);
+        }
+
+        to {
+            transform: translate(80vw, 50vh);
+        }
+    }
+
+    .blob2 {
+        width: 60vw;
+        background: var(--accent-green-deep);
+        animation: move2 12s ease-in-out infinite alternate;
+    }
+
+    @keyframes move2 {
+        from {
+            transform: translate(80vw, 0);
+        }
+
+        to {
+            transform: translate(5vw, 85vh);
+        }
+    }
+
+    .blob3 {
+        width: 50vw;
+        background: var(--accent-green-core);
+        animation: move3 10s ease-in-out infinite alternate;
+    }
+
+    @keyframes move3 {
+        from {
+            transform: translate(25vw, 70vh);
+        }
+
+        to {
+            transform: translate(67vw, 10vh);
+        }
+    }
+
+    .blob4 {
+        width: 70vw;
+        background: var(--accent-green-deep);
+        animation: move4 15s ease-in-out infinite alternate;
+    }
+
+    @keyframes move4 {
+        from {
+            transform: translate(10vw, 0vh);
+        }
+
+        to {
+            transform: translate(20vw, 70vh);
+        }
+    }
