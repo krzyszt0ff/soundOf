@@ -34,7 +34,7 @@ export default function Login () {
         return;
       }
 
-      router.push('/dashboard');
+      router.push('/');
       router.refresh(); // odświeża Server Components, żeby "zobaczyły" nowe cookie
     } catch (err) {
       setError('Network error — try again');
