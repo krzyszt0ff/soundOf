@@ -1,18 +1,26 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 
-const protectedRoutes = ['/profile'];
+const publicRoutes = ["/auth"];
 
 export default function proxy(req: NextRequest) {
-    const token = req.cookies.get('token')?.value;
+  const token = req.cookies.get("token")?.value;
+  const { pathname } = req.nextUrl;
 
-    const isProtectedRoute = protectedRoutes.some((route) => 
-    req.nextUrl.pathname.startsWith(route));
+  const isPublic = publicRoutes.some(
+    (route) => pathname === route || pathname.startsWith(route + "/"),
+  );
 
-    if (isProtectedRoute && !token) {
-        return NextResponse.redirect(new URL('/auth/login', req.url));
-    }
+  if (!isPublic && !token) {
+    return NextResponse.redirect(new URL("/auth", req.url));
+  }
 
-    return NextResponse.next()
+  if (isPublic && token) {
+    return NextResponse.redirect(new URL("/", req.url));
+  }
+
+  return NextResponse.next();
 }
 
-export const config = { matcher: ['/profile/:path*'] };
+export const config = {
+  matcher: ["/((?!api|_next/static|_next/image|.*\\..*).*)"],
+};
