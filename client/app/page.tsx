@@ -1,9 +1,15 @@
-export default function Home() {
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+
+export default async function Home() {
+  const session = (await cookies()).get("token");
+  if (!session) {
+    redirect("/auth");
+  }
+
   return (
-    <div className="">
-      <main className="">
-        <h1>Szkrr szkrr yeah yeah</h1>
-      </main>
-    </div>
-  );
+    <main>
+      TBA: Hub for logged in users
+    </main>
+  )
 }
