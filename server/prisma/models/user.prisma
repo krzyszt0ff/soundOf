@@ -15,11 +15,15 @@ model UserProfile {
     displayName     String?
     avatar_url      String?
     bio             String?
+    creation_date   DateTime @default(now())
 
     user            UserCredentials @relation(fields: [id], references: [id], onDelete: Cascade)
     followers       UserFollowing[] @relation("Followee") //who follows me
     following       UserFollowing[] @relation("Follower")  //who I follow
     artist          Artist? //user can also be an artist
+    pins            Pin[]
+    pin_likes       PinLike[]
+    pin_comments    PinComment[]
 }
 
 model UserFollowing {
