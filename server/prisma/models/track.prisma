@@ -1,0 +1,65 @@
+model Track {
+    id              String @id @default(uuid())
+    name            String
+    duration_in_ms  Int
+    album_id        String
+    deezer_id       String? @unique
+    position_in_album   Int
+
+    album           Album @relation(fields: [album_id], references: [id], onDelete: Cascade)
+    artists         TrackArtist[]
+
+    @@unique([album_id, position_in_album])
+}
+
+model Album {
+    id              String @id @default(uuid())
+    name            String
+    release_date    DateTime
+    cover_url       String?
+    deezer_id       String? @unique
+
+    tracks          Track[]
+    artists         AlbumArtist[]
+}
+
+model Artist {
+    id String @id @default(uuid())
+    name String
+    user_id String? @unique//an artist can link their user account
+    deezer_id String? @unique
+
+    tracks TrackArtist[]
+    albums AlbumArtist[]
+
+    user UserProfile? @relation(fields: [user_id], references: [id], onDelete: SetNull)
+}
+
+model TrackArtist {
+    track_id String
+    artist_id String
+    position Int
+
+    track Track @relation(fields: [track_id], references: [id], onDelete: Cascade)
+    artist Artist @relation(fields: [artist_id], references: [id], onDelete: Cascade)
+
+    @@id([track_id, artist_id]) //one artist can only appear once on a track
+    @@unique([track_id, position]) //one position == one artist in a track
+
+    @@index([artist_id])
+
+}
+
+model AlbumArtist {
+    album_id String
+    artist_id String
+    position Int
+
+    album Album @relation(fields: [album_id], references: [id], onDelete: Cascade)
+    artist Artist @relation(fields: [artist_id], references: [id], onDelete: Cascade)
+
+    @@id([album_id, artist_id])
+    @@unique([album_id, position])
+
+    @@index([artist_id])
+}
