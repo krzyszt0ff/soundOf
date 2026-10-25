@@ -1,0 +1,37 @@
+model Pin {
+    id String @id @default(uuid())
+    track_id String
+    lat Float
+    lon Float
+    description String
+    user_id String
+    publish_date DateTime @default(now())
+
+    track Track @relation(fields: [track_id], references: [id], onDelete: Cascade)
+    user UserProfile @relation(fields: [user_id], references: [id], onDelete: Cascade)
+    likes PinLike[]
+    comments PinComment[]
+
+    @@index([user_id, publish_date(sort: Desc)])
+}
+
+model PinLike {
+    user_id String
+    pin_id String
+
+    user UserProfile @relation(fields: [user_id], references: [id], onDelete: Cascade)
+    pin Pin @relation(fields: [pin_id], references: [id], onDelete: Cascade)
+
+    @@id([user_id, pin_id])
+}
+
+model PinComment {
+    id String @id @default(uuid())
+    pin_id String
+    user_id String
+    publish_date DateTime @default(now())
+    comment String
+
+    pin Pin @relation(fields: [pin_id], references: [id], onDelete: Cascade)
+    user UserProfile @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
