@@ -2,6 +2,7 @@ import express from 'express';
 import accountRouter from './routes/accountRouter.js';
 import profileRouter from './routes/profileRouter.js';
 import musicRouter from './routes/musicRouter.js';
+import pinRouter from './routes/pinRouter.js';
 import { env } from './config/env.js';
 import { prisma } from './lib/prisma.js';
 import cors from 'cors';
@@ -26,6 +27,7 @@ const musicLimiter = rateLimit({
 app.use("/api/account", accountRouter);
 app.use("/api/profile", profileRouter);  
 app.use("/api/music", musicLimiter, musicRouter);
+app.use("/api/pins", pinRouter);
 
 app.get('/', (req, res) => {
   res.json({ message: 'SoundOf server is running a-ok!' });

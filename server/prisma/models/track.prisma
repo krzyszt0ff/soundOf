@@ -1,7 +1,7 @@
 model Track {
     id              String @id @default(uuid())
     name            String
-    duration_in_ms  Int
+    duration_in_s   Int
     album_id        String
     deezer_id       String? @unique
     position_in_album   Int

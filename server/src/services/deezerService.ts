@@ -3,6 +3,39 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
 
 const cache = new Map<string, {data: unknown; expires: number }>();
 
+export class DeezerError extends Error {
+    code?: number;
+    constructor(message: string, code?: number) {
+        super(message);
+        this.name = "DeezerError";
+        this.code = code;
+    }
+}
+
+export interface DeezerArtistRef {
+    id: number;
+    name: string;
+}
+
+export interface DeezerTrack {
+    id: number;
+    title: string;
+    duration: number;          // seconds
+    track_position: number;
+    contributors?: DeezerArtistRef[]; // features on a track
+    artist: DeezerArtistRef;
+    album: { id: number };
+}
+
+export interface DeezerAlbum {
+    id: number;
+    title: string;
+    release_date: string;      // YYYY-MM-DD
+    cover_xl?: string;
+    contributors?: DeezerArtistRef[]; // features on an album
+    artist: DeezerArtistRef;
+}
+
 async function deezerGet<T>(path: string, params: Record<string, string | number> = {}): Promise<T>{
     const url = new URL(path, DEEZER_BASE_URL);
     for (const [k, v] of Object.entries(params)) url.searchParams.set(k, String(v));
@@ -12,10 +45,10 @@ async function deezerGet<T>(path: string, params: Record<string, string | number
     if(cached && cached.expires > Date.now()) return cached.data as T;
 
     const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
-    if (!res.ok) throw new Error(`Deezer responded with ${res.status}`);
+    if (!res.ok) throw new DeezerError(`Deezer responded with ${res.status}`);
 
     const data = await res.json();
-    if (data?.error) throw new Error(`Deeer error: ${data.error.message ?? "unknown"}`);
+    if (data?.error) throw new DeezerError(`Deezer error: ${data.error.message ?? "unknown"}`, data.error.code);
 
     cache.set(key, { data, expires: Date.now() + CACHE_TTL_MS });
     return data as T;
@@ -29,4 +62,5 @@ export const searchArtists = (q: string, limit = 25, index = 0) =>
 
 export const getArtist = (id: number) => deezerGet(`/artist/${id}`);
 export const getArtistAlbums = (id: number) => deezerGet(`/artist/${id}/albums`);
-export const getAlbum = (id: number) => deezerGet(`/album/${id}`);
+export const getAlbum = (id: number) => deezerGet<DeezerAlbum>(`/album/${id}`);
+export const getTrack = (id: number) => deezerGet<DeezerTrack>(`/track/${id}`);
