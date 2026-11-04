@@ -37,6 +37,7 @@ export default function Login () {
       router.push('/');
       router.refresh(); // odświeża Server Components, żeby "zobaczyły" nowe cookie
     } catch (err) {
+      console.error('Login request failed:', err);
       setError('Network error — try again');
     } finally {
       setIsLoading(false);
