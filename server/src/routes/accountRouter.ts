@@ -12,8 +12,8 @@ router.get('/hello', hello);
 router.post('/register', register);
 
 // logging in an existing user
-// INPUT: email OR username, password
-// OUTPUT: success: true, userToken
+// INPUT: identifier (email OR username), password
+// OUTPUT: success: true OR succes: false, error
 router.post('/login', login);
 
 export default router;

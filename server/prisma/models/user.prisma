@@ -12,7 +12,7 @@ model UserCredentials {
 model UserProfile {
     id              String @id
 
-    displayName     String?
+    display_name     String?
     avatar_url      String?
     bio             String?
     creation_date   DateTime @default(now())
