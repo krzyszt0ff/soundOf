@@ -2,8 +2,7 @@ import { Request, Response } from "express";
 import * as z from 'zod';
 import { prisma } from "../lib/prisma.js";
 import { Prisma } from "../generated/prisma/client.js";
-import { createPinSchema } from "../schemas/createPinSchema.js";
-import { nearbyPinSchema } from "../schemas/nearbyPinSchema.js";
+import { createPinSchema, nearbyPinSchema, pinIdSchema } from "../schemas/pinSchemas.js";
 import { ensureTrackFromDeezer } from "../services/trackService.js";
 import { DeezerError } from "../services/deezerService.js";
 
@@ -129,5 +128,66 @@ export async function getNearbyPins(req: Request, res: Response) {
     } catch (err) {
         console.error("Get nearby pins error:", err);
         return res.status(500).json({ success: false, error: "Database error occured" });
+    }
+}
+
+export async function likePin(req: Request, res: Response) {
+    const userId = req.user?.id;
+    if (!userId) {
+        return res.status(401).json({ success: false, error: "Unauthorized!" });
+    }
+
+    const result = pinIdSchema.safeParse(req.params);
+    if (!result.success) {
+        return res.status(400).json({
+            success: false,
+            error: z.flattenError(result.error)
+        });
+    }
+
+    const { id: pinId } = result.data;
+
+    try {
+        const pinLike = await prisma.pinLike.upsert({
+            where: { user_id_pin_id: { user_id: userId, pin_id: pinId } },
+            create: { user_id: userId, pin_id: pinId },
+            update: {},
+        });
+        return res.status(201).json({ success: true, pinLike });
+
+    } catch (err) {
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2003") {
+            return res.status(404).json({ success: false, error: "Pin not found" });
+        }
+        console.error("Like pin error:", err);
+        return res.status(500).json({ success: false, error: "Database error occurred" });
+    }
+}
+
+export async function unlikePin(req: Request, res: Response) {
+    const userId = req.user?.id;
+    if (!userId) {
+        return res.status(401).json({ success: false, error: "Unauthorized!" });
+    }
+
+    const result = pinIdSchema.safeParse(req.params);
+    if (!result.success) {
+        return res.status(400).json({
+            success: false,
+            error: z.flattenError(result.error)
+        });
+    }
+
+    const { id: pinId } = result.data;
+
+    try {
+        const pinLike = await prisma.pinLike.deleteMany({
+            where: { user_id: userId, pin_id: pinId },
+        });
+        return res.status(204).send();
+
+    } catch (err) {
+        console.error("Unlike pin error:", err);
+        return res.status(500).json({ success: false, error: "Database error occurred" });
     }
 }

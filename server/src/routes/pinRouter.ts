@@ -1,6 +1,6 @@
 import express from "express";
 import { requireAuth } from "../middleware/requireAuth.js";
-import { createPin, getNearbyPins } from "../controllers/pinController.js";
+import { createPin, getNearbyPins, likePin, unlikePin } from "../controllers/pinController.js";
 
 const router = express.Router();
 
@@ -13,5 +13,15 @@ router.post("/", requireAuth, createPin);
 // INPUT (query): lat, lon, radius (optional, meters), limit (optional)
 // OUTPUT: success: true, pins (sorted by distance) OR success: false, error 
 router.get("/nearby", getNearbyPins);
+
+// liking a pin (logged-in users only)
+// INPUT (params): id
+// OUTPUT: success: true, pinLike OR success: false, error
+router.post("/:id/like", requireAuth, likePin);
+
+// unliking a pin (logged-in users only)
+// INPUT (params): id
+// OUTPUT: 204 No Content OR success: false, error
+router.delete("/:id/like", requireAuth, unlikePin);
 
 export default router;
