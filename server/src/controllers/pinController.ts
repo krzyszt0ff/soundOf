@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import * as z from 'zod';
 import { prisma } from "../lib/prisma.js";
 import { Prisma } from "../generated/prisma/client.js";
-import { createPinSchema, nearbyPinSchema, pinIdSchema } from "../schemas/pinSchemas.js";
+import { createPinSchema, nearbyPinSchema, pinIdSchema, pinCommentSchema, commentParamsSchema } from "../schemas/pinSchemas.js";
 import { ensureTrackFromDeezer } from "../services/trackService.js";
 import { DeezerError } from "../services/deezerService.js";
 
@@ -188,6 +188,80 @@ export async function unlikePin(req: Request, res: Response) {
 
     } catch (err) {
         console.error("Unlike pin error:", err);
+        return res.status(500).json({ success: false, error: "Database error occurred" });
+    }
+}
+
+export async function commentPin(req: Request, res: Response) {
+    const userId = req.user?.id;
+    if (!userId) {
+        return res.status(401).json({ success: false, error: "Unauthorized!" });
+    }
+
+    const params = pinIdSchema.safeParse(req.params);
+    const body = pinCommentSchema.safeParse(req.body);
+
+    if (!params.success) {
+        return res.status(400).json({ success: false, error: z.flattenError(params.error) });
+    }
+    if (!body.success) {
+        return res.status(400).json({ success: false, error: z.flattenError(body.error) });
+    }
+
+    const { id: pinId } = params.data;
+    const { comment } = body.data;
+
+    try {
+        const pinComment = await prisma.pinComment.create({
+            data: {
+                pin_id: pinId,
+                user_id: userId,
+                comment: comment,
+            }
+        })
+        return res.status(201).json({ success: true, pinComment });
+    } catch(err) {
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2003") {
+            return res.status(404).json({ success: false, error: "Pin not found" });
+        }
+        console.error("Create pin comment error:", err);
+        return res.status(500).json({ success: false, error: "Database error occurred" });
+    }
+}
+
+export async function deleteComment(req: Request, res: Response) {
+    const userId = req.user?.id;
+    if (!userId) {
+        return res.status(401).json({ success: false, error: "Unauthorized!" });
+    }
+
+    const result = commentParamsSchema.safeParse(req.params);
+    if (!result.success) {
+        return res.status(400).json({
+            success: false,
+            error: z.flattenError(result.error)
+        });
+    }
+
+    const { id: pinId, commentId } = result.data;
+    const isAdmin = req.user?.role === "admin";
+
+    try {
+        const { count } = await prisma.pinComment.deleteMany({
+            where: {
+                id: commentId,
+                pin_id: pinId,
+                // admin can delete any comment, others only their own
+                ...(isAdmin ? {} : { user_id: userId }),
+            },
+        });
+
+        if (count === 0) {
+            return res.status(404).json({ success: false, error: "Comment not found" });
+        }
+        return res.status(204).send();
+    } catch (err) {
+        console.error("Delete comment error:", err);
         return res.status(500).json({ success: false, error: "Database error occurred" });
     }
 }

@@ -1,6 +1,6 @@
 import express from "express";
 import { requireAuth } from "../middleware/requireAuth.js";
-import { createPin, getNearbyPins, likePin, unlikePin } from "../controllers/pinController.js";
+import { commentPin, createPin, deleteComment, getNearbyPins, likePin, unlikePin } from "../controllers/pinController.js";
 
 const router = express.Router();
 
@@ -23,5 +23,15 @@ router.post("/:id/like", requireAuth, likePin);
 // INPUT (params): id
 // OUTPUT: 204 No Content OR success: false, error
 router.delete("/:id/like", requireAuth, unlikePin);
+
+// commenting a pin (logged-in users only)
+// INPUT: (params) id, (body) comment
+// OUTPUT: success: true, comment OR success: false, error
+router.post("/:id/comment", requireAuth, commentPin);
+
+// deleting a pin comment (logged-in users only)
+// INPUT (params): (Pin) id, commentId
+// OUTPUT: 204 No Content OR success: false, error
+router.delete("/:id/comment/:commentId", requireAuth, deleteComment);
 
 export default router;

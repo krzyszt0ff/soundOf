@@ -21,3 +21,11 @@ export const nearbyPinSchema = z.object({
 export const pinIdSchema = z.object({
     id: z.uuid(),
 })
+
+export const commentParamsSchema = pinIdSchema.extend({
+    commentId: z.uuid(),
+});
+
+export const pinCommentSchema = z.object({
+    comment: z.string().trim().min(1).max(500),
+})
