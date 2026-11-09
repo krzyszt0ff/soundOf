@@ -25,6 +25,7 @@ export interface DeezerTrack {
     contributors?: DeezerArtistRef[]; // features on a track
     artist: DeezerArtistRef;
     album: { id: number };
+    preview: string;
 }
 
 export interface DeezerAlbum {
