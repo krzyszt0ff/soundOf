@@ -5,3 +5,7 @@ export const trackSearchSchema = z.object({
     limit: z.coerce.number().int().min(1).max(50).default(25),
     index: z.coerce.number().int().min(0).max(1000).default(0),
 });
+
+export const deezerTrackIdSchema = z.object({
+    deezerId: z.coerce.number().int().positive(),
+});
