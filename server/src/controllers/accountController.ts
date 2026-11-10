@@ -8,6 +8,7 @@ import { userRoleOptions } from "../enums.js"
 import jwt from "jsonwebtoken";
 import { env } from '../config/env.js';
 import { Prisma } from "../generated/prisma/client.js";
+import { authCookieOptions } from "../config/cookies.js";
 
 const SALT_ROUNDS = 12;
 const DUMMY_HASH = bcrypt.hashSync("dummy", SALT_ROUNDS);
@@ -78,9 +79,7 @@ export async function login(req : Request, res : Response) {
         const token = jwt.sign({ id: user.id, role: user.user_role }, env.JWT_SECRET, { expiresIn: '1h' });
 
         res.cookie('token', token, {
-            httpOnly: true,
-            secure: env.NODE_ENV === 'production',
-            sameSite: 'lax',
+            ...authCookieOptions,
             maxAge: 60 * 60 * 1000,
         });
 
@@ -94,6 +93,11 @@ export async function login(req : Request, res : Response) {
             error: 'Error logging in'
         });
     }
+}
+
+export function logout(req: Request, res: Response) {
+    res.clearCookie('token', authCookieOptions);
+    return res.status(200).json({ success: true });
 }
 
 // test function, to delete in the future :((
