@@ -1,5 +1,5 @@
 import express from 'express';
-import { hello, register, login } from '../controllers/accountController.js';
+import { hello, register, login, logout } from '../controllers/accountController.js';
 
 const router = express.Router();
 
@@ -15,5 +15,10 @@ router.post('/register', register);
 // INPUT: identifier (email OR username), password
 // OUTPUT: success: true OR succes: false, error
 router.post('/login', login);
+
+// logging out
+// INPUT: nah not really
+// OUTPUT: success: true
+router.post('/logout', logout);
 
 export default router;
