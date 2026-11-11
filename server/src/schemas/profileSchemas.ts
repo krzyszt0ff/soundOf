@@ -6,4 +6,8 @@ export const profileSchema = z.object({
     bio: z.string().trim().max(500).nullable(),
 })
 
+export const profileIdSchema = z.object({
+    profile_id: z.uuid()
+})
+
 export const updateProfileSchema = profileSchema.partial();

@@ -1,6 +1,6 @@
 import express from 'express';
 import { requireAuth } from '../middleware/requireAuth.js';
-import { updateProfile } from '../controllers/userController.js';
+import { updateProfile, viewProfile } from '../controllers/profileController.js';
 
 const router = express.Router();
 
@@ -8,5 +8,10 @@ const router = express.Router();
 // INPUT: display_name AND/OR avatar_url AND/OR bio
 // OUTPUT: succes: true, profile OR success: false, error
 router.patch("/me", requireAuth, updateProfile);
+
+// viewing user profile
+// INPUT: (params) id
+// OUTPUT: success: true, profile OR success: false, error
+router.get("/:profile_id", requireAuth, viewProfile);
 
 export default router;

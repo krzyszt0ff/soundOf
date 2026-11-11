@@ -301,3 +301,43 @@ export async function deletePin(req: Request, res: Response) {
         return res.status(500).json({ success: false, error: "Database error occurred" });
     }
 }
+
+export async function viewPinComments(req: Request, res: Response) {
+    const userId = req.user?.id;
+    if (!userId) {
+        return res.status(401).json({ success: false, error: "Unauthorized!" });
+    }
+
+    const result = pinIdSchema.safeParse(req.params);
+    if (!result.success) {
+        return res.status(400).json({
+            success: false,
+            error: z.flattenError(result.error)
+        });
+    }
+
+    const { id: pin_id } = result.data;
+
+    try {
+        const profile = await prisma.pinComment.findMany({
+            where: { pin_id: pin_id },
+            select: { user_id: true, publish_date: true, comment: true },
+        });
+    
+        if (!profile) {
+            return res.status(404).json({
+                success: false,
+                error: 'Profile not found!'
+            })
+        }
+
+        return res.status(200).json({ success: true, profile })
+
+    } catch(err) {
+        console.error("Search profile error:", err);
+        return res.status(500).json({ 
+            success: false, 
+            error: 'Error searching profile'
+        });
+    }
+}

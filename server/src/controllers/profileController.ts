@@ -1,8 +1,16 @@
 import { Request, Response } from "express";
-import { updateProfileSchema } from "../schemas/profileSchema.js";
+import { profileIdSchema, updateProfileSchema } from "../schemas/profileSchemas.js";
 import { prisma } from "../lib/prisma.js";
 import { Prisma } from "../generated/prisma/client.js";
 import * as z from 'zod';
+
+const profileSelect = {
+    avatar_url: true,
+    display_name: true,
+    user: { select: { username: true } },
+    bio: true,
+    _count: { select: { followers: true, following: true } }
+} satisfies Prisma.UserProfileSelect;
 
 export async function updateProfile(req: Request, res: Response) {
     const userId = req.user?.id;
@@ -40,5 +48,45 @@ export async function updateProfile(req: Request, res: Response) {
         }
         console.error("Update profile error:", err);
         return res.status(500).json({ success: false, error: "Database error occurred" });
+    }
+}
+
+export async function viewProfile(req: Request, res: Response) {
+    const userId = req.user?.id;
+    if (!userId) {
+        return res.status(401).json({ success: false, error: "Unauthorized!" });
+    }
+
+    const result = profileIdSchema.safeParse(req.params);
+    if (!result.success) {
+        return res.status(400).json({
+            success: false,
+            error: z.flattenError(result.error)
+        });
+    }
+
+    const { profile_id } = result.data;
+
+    try {
+        const profile = await prisma.userProfile.findUnique({
+            where: { id: profile_id },
+            select: profileSelect,
+        });
+    
+        if (!profile) {
+            return res.status(404).json({
+                success: false,
+                error: 'Profile not found!'
+            })
+        }
+
+        return res.status(200).json({ success: true, profile })
+
+    } catch(err) {
+        console.error("Search profile error:", err);
+        return res.status(500).json({ 
+            success: false, 
+            error: 'Error searching profile'
+        });
     }
 }
