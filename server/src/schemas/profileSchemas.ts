@@ -7,7 +7,7 @@ export const profileSchema = z.object({
 })
 
 export const profileIdSchema = z.object({
-    profile_id: z.uuid()
+    profile_id: z.union([z.literal("me"), z.uuid()]),
 })
 
 export const updateProfileSchema = profileSchema.partial();

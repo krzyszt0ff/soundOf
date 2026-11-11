@@ -66,10 +66,11 @@ export async function viewProfile(req: Request, res: Response) {
     }
 
     const { profile_id } = result.data;
+    const targetId = profile_id === "me" ? userId : profile_id;
 
     try {
         const profile = await prisma.userProfile.findUnique({
-            where: { id: profile_id },
+            where: { id: targetId },
             select: profileSelect,
         });
     

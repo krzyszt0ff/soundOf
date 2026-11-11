@@ -10,7 +10,7 @@ const router = express.Router();
 router.patch("/me", requireAuth, updateProfile);
 
 // viewing user profile
-// INPUT: (params) id
+// INPUT: (params) id OR "me" to view own profile
 // OUTPUT: success: true, profile OR success: false, error
 router.get("/:profile_id", requireAuth, viewProfile);
 
