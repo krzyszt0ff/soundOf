@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { profileIdSchema, updateProfileSchema } from "../schemas/profileSchemas.js";
+import { followParamsSchema, profileIdSchema, updateProfileSchema } from "../schemas/profileSchemas.js";
 import { prisma } from "../lib/prisma.js";
 import { Prisma } from "../generated/prisma/client.js";
 import * as z from 'zod';
@@ -88,6 +88,74 @@ export async function viewProfile(req: Request, res: Response) {
         return res.status(500).json({ 
             success: false, 
             error: 'Error searching profile'
+        });
+    }
+}
+
+export async function followProfile(req: Request, res: Response) {
+    const userId = req.user?.id;
+    if (!userId) {
+        return res.status(401).json({ success: false, error: "Unauthorized!" });
+    }
+
+    const result = followParamsSchema.safeParse(req.params);
+    if (!result.success) {
+        return res.status(400).json({
+            success: false,
+            error: z.flattenError(result.error)
+        });
+    }
+
+    const { profile_id } = result.data;
+
+    if ( profile_id === userId ){
+        return res.status(400).json({ success: false, error: "You can't follow yourself" });
+    }
+
+    try{
+        const follow = await prisma.userFollowing.upsert({
+            where: { follower_id_followee_id: { follower_id: userId, followee_id: profile_id } },
+            create: { follower_id: userId, followee_id: profile_id },
+            update: {},
+        });
+
+        return res.status(200).json({ success: true, follow })
+    } catch (err) {
+        console.error("Follow profile error:", err);
+        return res.status(500).json({ 
+            success: false, 
+            error: 'Error following profile'
+        });
+    }
+}
+
+export async function unfollowProfile(req: Request, res: Response) {
+    const userId = req.user?.id;
+    if (!userId) {
+        return res.status(401).json({ success: false, error: "Unauthorized!" });
+    }
+
+    const result = followParamsSchema.safeParse(req.params);
+    if (!result.success) {
+        return res.status(400).json({
+            success: false,
+            error: z.flattenError(result.error)
+        });
+    }
+
+    const { profile_id } = result.data;
+
+    try{
+        const follow = await prisma.userFollowing.deleteMany({
+            where: { follower_id: userId, followee_id: profile_id }
+        });
+
+        return res.status(204).send();
+    } catch (err) {
+        console.error("Unfollow profile error:", err);
+        return res.status(500).json({ 
+            success: false, 
+            error: 'Error unfollowing profile'
         });
     }
 }

@@ -1,6 +1,6 @@
 import express from 'express';
 import { requireAuth } from '../middleware/requireAuth.js';
-import { updateProfile, viewProfile } from '../controllers/profileController.js';
+import { followProfile, unfollowProfile, updateProfile, viewProfile } from '../controllers/profileController.js';
 
 const router = express.Router();
 
@@ -13,5 +13,15 @@ router.patch("/me", requireAuth, updateProfile);
 // INPUT: (params) id OR "me" to view own profile
 // OUTPUT: success: true, profile OR success: false, error
 router.get("/:profile_id", requireAuth, viewProfile);
+
+// following user profile
+// INPUT: (params) id (user to follow)
+// OUTPUT: success: true, follow OR success: false, error
+router.post("/:profile_id/follow", requireAuth, followProfile);
+
+// unfollowing user profile
+// INPUT: (params) id 
+// OUTPUT: 204 No Content OR success: false, error
+router.delete("/:profile_id/follow", requireAuth, unfollowProfile);
 
 export default router;

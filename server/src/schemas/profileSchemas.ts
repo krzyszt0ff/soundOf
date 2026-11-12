@@ -10,4 +10,8 @@ export const profileIdSchema = z.object({
     profile_id: z.union([z.literal("me"), z.uuid()]),
 })
 
+export const followParamsSchema = z.object({
+    profile_id: z.uuid(),                                
+});
+
 export const updateProfileSchema = profileSchema.partial();
