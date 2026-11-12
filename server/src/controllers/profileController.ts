@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { followParamsSchema, profileIdSchema, updateProfileSchema } from "../schemas/profileSchemas.js";
+import { followParamsSchema, profileIdSchema, updateProfileSchema, followListQuerySchema } from "../schemas/profileSchemas.js";
 import { prisma } from "../lib/prisma.js";
 import { Prisma } from "../generated/prisma/client.js";
 import * as z from 'zod';
@@ -10,6 +10,13 @@ const profileSelect = {
     user: { select: { username: true } },
     bio: true,
     _count: { select: { followers: true, following: true } }
+} satisfies Prisma.UserProfileSelect;
+
+const miniProfileSelect = {
+    id: true,
+    display_name: true,
+    avatar_url: true,
+    user: { select: { username: true } },
 } satisfies Prisma.UserProfileSelect;
 
 export async function updateProfile(req: Request, res: Response) {
@@ -158,4 +165,72 @@ export async function unfollowProfile(req: Request, res: Response) {
             error: 'Error unfollowing profile'
         });
     }
+}
+
+type FollowDirection = "followers" | "following";
+
+async function listFollows(req: Request, res: Response, direction: FollowDirection) {
+    const userId = req.user?.id;
+    if (!userId) {
+        return res.status(401).json({ success: false, error: "Unauthorized!" });
+    }
+
+    const params = profileIdSchema.safeParse(req.params);
+    if (!params.success) {
+        return res.status(400).json({ success: false, error: z.flattenError(params.error) });
+    }
+    const query = followListQuerySchema.safeParse(req.query);
+    if (!query.success) {
+        return res.status(400).json({ success: false, error: z.flattenError(query.error) });
+    }
+
+    const { profile_id } = params.data;
+    const targetId = profile_id === "me" ? userId : profile_id;
+    const { limit, offset } = query.data;
+
+    try {
+        const exists = await prisma.userProfile.findUnique({
+            where: { id: targetId },
+            select: { id: true },
+        });
+        if (!exists) {
+            return res.status(404).json({ success: false, error: "Profile not found" });
+        }
+
+        if (direction === "followers") {
+            // who is following user
+            const rows = await prisma.userFollowing.findMany({
+                where: { followee_id: targetId },
+                select: { created_at: true, follower: { select: miniProfileSelect } },
+                orderBy: { created_at: "desc" },
+                take: limit,
+                skip: offset,
+            });
+            const users = rows.map((r) => ({ ...r.follower, followed_at: r.created_at }));
+            return res.status(200).json({ success: true, users });
+        }
+
+        // who user is following
+        const rows = await prisma.userFollowing.findMany({
+            where: { follower_id: targetId },
+            select: { created_at: true, followee: { select: miniProfileSelect } },
+            orderBy: { created_at: "desc" },
+            take: limit,
+            skip: offset,
+        });
+        const users = rows.map((r) => ({ ...r.followee, followed_at: r.created_at }));
+        return res.status(200).json({ success: true, users });
+
+    } catch (err) {
+        console.error(`Get ${direction} error:`, err);
+        return res.status(500).json({ success: false, error: "Database error occurred" });
+    }
+}
+
+export function getFollowers(req: Request, res: Response) {
+    return listFollows(req, res, "followers");
+}
+
+export function getFollowing(req: Request, res: Response) {
+    return listFollows(req, res, "following");
 }

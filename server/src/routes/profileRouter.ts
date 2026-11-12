@@ -1,6 +1,6 @@
 import express from 'express';
 import { requireAuth } from '../middleware/requireAuth.js';
-import { followProfile, unfollowProfile, updateProfile, viewProfile } from '../controllers/profileController.js';
+import { followProfile, unfollowProfile, updateProfile, viewProfile, getFollowers, getFollowing } from '../controllers/profileController.js';
 
 const router = express.Router();
 
@@ -23,5 +23,15 @@ router.post("/:profile_id/follow", requireAuth, followProfile);
 // INPUT: (params) id 
 // OUTPUT: 204 No Content OR success: false, error
 router.delete("/:profile_id/follow", requireAuth, unfollowProfile);
+
+// list of users following the profile
+// INPUT: (params) profile_id OR "me", (query) limit?, offset?
+// OUTPUT: success: true, users OR success: false, error
+router.get("/:profile_id/followers", requireAuth, getFollowers);
+
+// list of users the profile follows
+// INPUT: (params) profile_id OR "me", (query) limit?, offset?
+// OUTPUT: success: true, users OR success: false, error
+router.get("/:profile_id/following", requireAuth, getFollowing);
 
 export default router;
