@@ -5,6 +5,7 @@ import { Prisma } from "../generated/prisma/client.js";
 import { createPinSchema, nearbyPinSchema, pinIdSchema, pinCommentSchema, commentParamsSchema } from "../schemas/pinSchemas.js";
 import { ensureTrackFromDeezer } from "../services/trackService.js";
 import { DeezerError } from "../services/deezerService.js";
+import { paginationQuerySchema, profileIdSchema } from "../schemas/profileSchemas.js";
 
 const pinSelect = {
     id: true,
@@ -300,4 +301,95 @@ export async function deletePin(req: Request, res: Response) {
         console.error("Delete comment error:", err);
         return res.status(500).json({ success: false, error: "Database error occurred" });
     }
+}
+
+export async function viewPinComments(req: Request, res: Response) {
+    const userId = req.user?.id;
+    if (!userId) {
+        return res.status(401).json({ success: false, error: "Unauthorized!" });
+    }
+
+    const result = pinIdSchema.safeParse(req.params);
+    if (!result.success) {
+        return res.status(400).json({
+            success: false,
+            error: z.flattenError(result.error)
+        });
+    }
+
+    const { id: pin_id } = result.data;
+
+    try {
+        const profile = await prisma.pinComment.findMany({
+            where: { pin_id: pin_id },
+            select: { user_id: true, publish_date: true, comment: true },
+        });
+    
+        if (!profile) {
+            return res.status(404).json({
+                success: false,
+                error: 'Profile not found!'
+            })
+        }
+
+        return res.status(200).json({ success: true, profile })
+
+    } catch(err) {
+        console.error("Search profile error:", err);
+        return res.status(500).json({ 
+            success: false, 
+            error: 'Error searching profile'
+        });
+    }
+}
+
+export async function getUserPins(req: Request, res: Response) {
+    const userId = req.user?.id;
+    if (!userId) {
+        return res.status(401).json({ success: false, error: "Unauthorized!" });
+    }
+
+    const result = profileIdSchema.safeParse(req.params);
+    if (!result.success) {
+        return res.status(400).json({
+            success: false,
+            error: z.flattenError(result.error)
+        });
+    }
+
+    const params = profileIdSchema.safeParse(req.params);
+    if (!params.success) {
+        return res.status(400).json({ success: false, error: z.flattenError(params.error) });
+    }
+    const query = paginationQuerySchema.safeParse(req.query);
+    if (!query.success) {
+        return res.status(400).json({ success: false, error: z.flattenError(query.error) });
+    }
+
+    const { profile_id } = params.data;
+    const targetId = profile_id === "me" ? userId : profile_id;
+    const { limit, offset } = query.data;
+
+    try {
+        const pins = await prisma.pin.findMany({
+            where: { user_id: targetId },
+            select: pinSelect,
+            orderBy: { publish_date: "desc" },
+            take: limit,
+            skip: offset,
+        });
+
+        return res.status(200).json({ success: true, pins });
+    } catch (err) {
+        console.error(`Get user pins error:`, err);
+        return res.status(500).json({ success: false, error: "Database error occurred" });
+    }
+
+    const pins = await prisma.pin.findMany({
+        where: { user_id: targetId },
+        select: pinSelect,
+        orderBy: { publish_date: "desc" },
+        take: limit,
+        skip: offset,
+    });
 }
