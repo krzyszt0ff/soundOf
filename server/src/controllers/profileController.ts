@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { followParamsSchema, profileIdSchema, updateProfileSchema, followListQuerySchema } from "../schemas/profileSchemas.js";
+import { followParamsSchema, profileIdSchema, updateProfileSchema, paginationQuerySchema, searchProfileSchema } from "../schemas/profileSchemas.js";
 import { prisma } from "../lib/prisma.js";
 import { Prisma } from "../generated/prisma/client.js";
 import * as z from 'zod';
@@ -179,7 +179,7 @@ async function listFollows(req: Request, res: Response, direction: FollowDirecti
     if (!params.success) {
         return res.status(400).json({ success: false, error: z.flattenError(params.error) });
     }
-    const query = followListQuerySchema.safeParse(req.query);
+    const query = paginationQuerySchema.safeParse(req.query);
     if (!query.success) {
         return res.status(400).json({ success: false, error: z.flattenError(query.error) });
     }
@@ -233,4 +233,38 @@ export function getFollowers(req: Request, res: Response) {
 
 export function getFollowing(req: Request, res: Response) {
     return listFollows(req, res, "following");
+}
+
+export async function searchProfiles(req: Request, res: Response) {
+    const userId = req.user?.id;
+    if (!userId) {
+        return res.status(401).json({ success: false, error: "Unauthorized!" });
+    }
+
+    const result = searchProfileSchema.safeParse(req.query);
+    if (!result.success) {
+        return res.status(400).json({ success: false, error: z.flattenError(result.error) });
+    }
+
+    const { q, limit, offset } = result.data;
+
+    try {
+        const profiles = await prisma.userProfile.findMany({
+            where: {
+                OR: [
+                    { display_name: { contains: q, mode: "insensitive" } },
+                    { user: { username: { contains: q, mode: "insensitive" } } },
+                ],
+            },
+            select: miniProfileSelect,
+            orderBy: { user: { username: "asc" } },
+            take: limit,
+            skip: offset,
+        });
+
+        return res.status(200).json({ success: true, profiles });
+    } catch (err) {
+        console.error("Search profiles error:", err);
+        return res.status(500).json({ success: false, error: "Database error occurred" });
+    }
 }

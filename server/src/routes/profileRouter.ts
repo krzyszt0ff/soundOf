@@ -1,6 +1,7 @@
 import express from 'express';
 import { requireAuth } from '../middleware/requireAuth.js';
-import { followProfile, unfollowProfile, updateProfile, viewProfile, getFollowers, getFollowing } from '../controllers/profileController.js';
+import { followProfile, unfollowProfile, updateProfile, viewProfile, getFollowers, getFollowing, searchProfiles } from '../controllers/profileController.js';
+import { getUserPins } from '../controllers/pinController.js';
 
 const router = express.Router();
 
@@ -8,6 +9,11 @@ const router = express.Router();
 // INPUT: display_name AND/OR avatar_url AND/OR bio
 // OUTPUT: succes: true, profile OR success: false, error
 router.patch("/me", requireAuth, updateProfile);
+
+// searching profiles by username or display name
+// INPUT (query): q, limit?, offset?
+// OUTPUT: success: true, profiles OR success: false, error
+router.get("/search", requireAuth, searchProfiles);
 
 // viewing user profile
 // INPUT: (params) id OR "me" to view own profile
@@ -33,5 +39,10 @@ router.get("/:profile_id/followers", requireAuth, getFollowers);
 // INPUT: (params) profile_id OR "me", (query) limit?, offset?
 // OUTPUT: success: true, users OR success: false, error
 router.get("/:profile_id/following", requireAuth, getFollowing);
+
+// list of pins the profile created
+// INPUT: (params) profile_id OR "me", (query) limit?, offset?
+// OUTPUT: success: true, pins OR success: false, error
+router.get("/:profile_id/pins", requireAuth, getUserPins);
 
 export default router;
